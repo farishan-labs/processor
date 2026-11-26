@@ -18,6 +18,7 @@ func usage() {
 Commands:
   version
   list
+  adopt <label> [--name <name>]
   add <name> --cmd <command> [--arg <arg>]... [--workdir <dir>] [--log <path>] [--autorestart]
   start <name>
   stop <name>
@@ -47,6 +48,13 @@ func main() {
 	case "version":
 		fmt.Println("processor", version.Version)
 	case "list":
+		if len(reg.Processes) == 0 {
+			// auto-adopt owned launchd agents on first run
+			adopted, _ := service.DiscoverOwned()
+			for _, p := range adopted {
+				_ = reg.Add(p)
+			}
+		}
 		if len(reg.Processes) == 0 {
 			fmt.Println("no processes registered")
 			return
@@ -144,6 +152,24 @@ func main() {
 			fail(err.Error())
 		}
 		fmt.Println("removed", name)
+	case "adopt":
+		if len(os.Args) < 3 {
+			fail("missing label")
+		}
+		label := os.Args[2]
+		name := label
+		if len(os.Args) >= 5 && os.Args[3] == "--name" {
+			name = os.Args[4]
+		}
+		p, err := service.Adopt(label)
+		if err != nil {
+			fail(err.Error())
+		}
+		p.Name = name
+		if err := reg.Add(p); err != nil {
+			fail(err.Error())
+		}
+		fmt.Println("adopted", name)
 	case "status":
 		if len(os.Args) < 3 {
 			fail("missing name")
