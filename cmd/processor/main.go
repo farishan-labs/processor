@@ -60,7 +60,11 @@ func main() {
 			return
 		}
 		for _, p := range reg.Processes {
-			fmt.Printf("%-20s %s\n", p.Name, p.Command)
+			t := p.Type
+			if t == "" {
+				t = "daemon"
+			}
+			fmt.Printf("%-20s %-10s %s\n", p.Name, t, p.Command)
 		}
 	case "add":
 		if len(os.Args) < 3 {

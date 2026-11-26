@@ -244,8 +244,24 @@ func parsePlist(path string) (registry.Process, error) {
 	if m := lpRe.FindStringSubmatch(s); len(m) > 1 {
 		lp = m[1]
 	}
+	// best-effort Type
+	ptype := "daemon"
+	lowerLabel := strings.ToLower(label)
+	if strings.Contains(lowerLabel, "menubar") || strings.Contains(lowerLabel, "tray") {
+		ptype = "menubar"
+	} else if strings.Contains(lowerLabel, "job") {
+		ptype = "job"
+	}
+	// best-effort HealthURL: scan args for http(s) URL
+	healthURL := ""
+	for _, a := range args {
+		if strings.HasPrefix(a, "http://") || strings.HasPrefix(a, "https://") {
+			healthURL = a
+			break
+		}
+	}
 	_ = label
-	return registry.Process{Command: cmd, Args: args, WorkDir: wd, LogPath: lp}, nil
+	return registry.Process{Command: cmd, Args: args, WorkDir: wd, LogPath: lp, Type: ptype, HealthURL: healthURL}, nil
 }
 
 func Status(name string) (string, error) {

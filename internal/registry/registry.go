@@ -14,6 +14,8 @@ type Process struct {
 	Args        []string          `json:"args,omitempty"`
 	WorkDir     string            `json:"workdir,omitempty"`
 	Env         map[string]string `json:"env,omitempty"`
+	Type        string            `json:"type,omitempty"`        // daemon|menubar|job
+	HealthURL   string            `json:"health_url,omitempty"`
 	LogPath     string            `json:"log_path,omitempty"`
 	AutoRestart bool              `json:"auto_restart,omitempty"`
 	CreatedAt   time.Time         `json:"created_at"`
