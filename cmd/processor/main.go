@@ -5,14 +5,18 @@ import (
 	"os"
 	"strings"
 
+	"os/exec"
+
 	"github.com/farishan-labs/processor/internal/registry"
 	"github.com/farishan-labs/processor/internal/service"
+	"github.com/farishan-labs/processor/internal/version"
 )
 
 func usage() {
 	fmt.Println(`processor - manage owned processes as services
 
 Commands:
+  version
   list
   add <name> --cmd <command> [--arg <arg>]... [--workdir <dir>] [--log <path>] [--autorestart]
   start <name>
@@ -40,6 +44,8 @@ func main() {
 	}
 
 	switch os.Args[1] {
+	case "version":
+		fmt.Println("processor", version.Version)
 	case "list":
 		if len(reg.Processes) == 0 {
 			fmt.Println("no processes registered")
@@ -86,6 +92,9 @@ func main() {
 		}
 		if cmd == "" {
 			fail("--cmd required")
+		}
+		if _, err := exec.LookPath(cmd); err != nil {
+			fail("command not found on PATH: " + cmd)
 		}
 		if err := reg.Add(registry.Process{Name: name, Command: cmd, Args: args, WorkDir: workdir, LogPath: logPath, AutoRestart: auto}); err != nil {
 			fail(err.Error())

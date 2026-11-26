@@ -106,6 +106,10 @@ func Install(p registry.Process) error {
 		return err
 	}
 	if runtime.GOOS == "darwin" {
+		// Prefer modern bootstrap; fall back to legacy load.
+		if err := exec.Command("launchctl", "bootstrap", fmt.Sprintf("gui/%d", os.Getuid()), path).Run(); err == nil {
+			return nil
+		}
 		return exec.Command("launchctl", "load", path).Run()
 	}
 	_ = exec.Command("systemctl", "--user", "daemon-reload").Run()
@@ -115,7 +119,9 @@ func Install(p registry.Process) error {
 func Uninstall(name string) error {
 	path := ServicePath(name)
 	if runtime.GOOS == "darwin" {
-		_ = exec.Command("launchctl", "unload", path).Run()
+		if err := exec.Command("launchctl", "bootout", fmt.Sprintf("gui/%d", os.Getuid()), path).Run(); err != nil {
+			_ = exec.Command("launchctl", "unload", path).Run()
+		}
 	} else {
 		_ = exec.Command("systemctl", "--user", "disable", name+".service").Run()
 		_ = exec.Command("systemctl", "--user", "daemon-reload").Run()
